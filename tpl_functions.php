@@ -244,7 +244,7 @@ if (!function_exists('tpl_incdir')) {
     }
 }
 
-function _tpl_toc_to_twitter_bootstrap_event_hander_dump_level($data, $header='', $firstlevel=false)
+function _tpl_toc_to_foundation_event_handler_dump_level($data, $header='', $firstlevel=false)
 {
 
 
@@ -260,43 +260,80 @@ function _tpl_toc_to_twitter_bootstrap_event_hander_dump_level($data, $header=''
         $chevronHTML = '';
     }
 
-    $ret = '';
-    $ret .= '<ul class="nav list-group">';
-    if ($header != '') {
-        $ret .= '<li class="list-group-item nav-header">'.$header.'</li>';
-    }
-    $ret .= '<li class="divider"></li>';
+    $ret = '<div data-magellan-expedition="fixed">';
+    $ret .= '<dl class="sub-nav">';
 
     $first = true;
     $li_inner = ' class ="active"';
 
+
+
     //Only supports top level links for now.
     foreach($data as $heading)
     {
-        $ret .= '<li' . $li_inner . '><a href="#' . $heading['link'] . '">'. $chevronHTML . $heading['title'] . '</a></li>';
+        $ret .= '<dd' . $li_inner . ' data-magellan-arrival="' . $heading['hid'] . '"><a href="#' . $heading['hid'] . '">'. $chevronHTML . $heading['title'] . '</a></dd>';
 
         $li_inner = '';
     }
-
-    $ret .= '<li class="divider"></li>';
-    $ret .= '</ul>';
+    $ret .= '</dl>';
+    $ret .= '</div>';
 
     return $ret;
 }
 
-function _tpl_toc_to_twitter_bootstrap_event_hander(&$event, $param)
+function _tpl_toc_to_foundation_event_handler(&$event, $param)
 {
     global $conf;
     //This is tied to the specific format of the DokuWiki TOC.
-    echo _tpl_toc_to_twitter_bootstrap_event_hander_dump_level($event->data, $conf['sidebar'], true);
+    echo _tpl_toc_to_foundation_event_handler_dump_level($event->data, '', true);
 }
 
-function _tpl_toc_to_twitter_bootstrap()
+function _tpl_toc_to_foundation()
 {
     //Force generation of TOC, request that the TOC is returned as HTML, but then ignore the returned string. The hook will instead dump out the TOC.
     global $EVENT_HANDLER;
-    $EVENT_HANDLER->register_hook('TPL_TOC_RENDER', 'AFTER', NULL, '_tpl_toc_to_twitter_bootstrap_event_hander');
+    $EVENT_HANDLER->register_hook('TPL_TOC_RENDER', 'AFTER', NULL, '_tpl_toc_to_foundation_event_handler');
     tpl_toc(true);
+}
+
+function _tpl_index_to_foundation()
+{
+        global $ID;
+        global $lang;
+        global $conf;
+
+        $ns = getNS($ID);
+
+        $conf['dir'] = str_replace(':','/',$ns);
+
+        // prepare data
+        $opts = array(
+            'listfiles' => true,
+            'listdirs'  => false,
+            'pagesonly' => true,
+            'meta'      => true
+        );
+
+        // read the directory
+        $result = array();
+        search($result,$conf['datadir'],'search_universal',$opts,$ns);
+
+        usort($result,"_tpl_sort_page");
+
+        $ret = '<ul class="side-nav">';
+
+        foreach($result as $item){
+            $title = tpl_pagetitle($item['id'], true);
+            $ret .= '<li><a href="#">' . $title . '</a></li>';
+        }
+        $ret .= '</ul>';
+
+        print_r($ret);
+
+}
+
+function _tpl_sort_page($a,$b){
+    return strcmp($a['id'],$b['id']);
 }
 
 
